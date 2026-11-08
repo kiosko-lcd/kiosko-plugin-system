@@ -1,0 +1,10 @@
+{
+  "name": "@tessera/plugin-system",
+  "version": "0.1.0",
+  "description": "Machine vitals (CPU, cores, temperature, memory, disk, uptime) as a shared source, and a system health card.",
+  "type": "module",
+  "license": "MIT",
+  "exports": { ".": { "source": "./src/index.ts", "default": "./dist/index.js" } },
+  "tessera": { "plugin": "./dist/index.js" },
+  "peerDependencies": { "@tessera/sdk": "*" }
+}
