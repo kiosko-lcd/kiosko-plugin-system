@@ -5,7 +5,7 @@
  */
 import { availableParallelism, loadavg, platform, uptime } from 'node:os';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { defineSource, t } from '@tessera/sdk';
+import { defineSource, t } from '@kiosko/sdk';
 import { coreUsage, readCpuSample, readCpuTemp, readDisk, readMemory, SYSTEM_ROOT, type CpuSample } from './sensors.ts';
 
 /**

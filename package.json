@@ -1,24 +1,24 @@
 {
-  "name": "tessera-plugin-system",
+  "name": "kiosko-plugin-system",
   "version": "0.1.0",
   "description": "Machine vitals (CPU, cores, temperature, memory, disk, uptime) as a shared source, and a system health card.",
   "type": "module",
   "license": "MIT",
   "author": "Loksly",
   "keywords": [
-    "tessera",
-    "tessera-plugin",
+    "kiosko",
+    "kiosko-plugin",
     "lcd",
     "widgets",
     "system"
   ],
-  "homepage": "https://github.com/Loksly/tessera-plugin-system#readme",
+  "homepage": "https://github.com/kiosko-lcd/kiosko-plugin-system#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Loksly/tessera-plugin-system.git"
+    "url": "git+https://github.com/kiosko-lcd/kiosko-plugin-system.git"
   },
   "bugs": {
-    "url": "https://github.com/Loksly/tessera-plugin-system/issues"
+    "url": "https://github.com/kiosko-lcd/kiosko-plugin-system/issues"
   },
   "exports": {
     ".": {
@@ -26,7 +26,7 @@
       "default": "./dist/index.js"
     }
   },
-  "tessera": {
+  "kiosko": {
     "plugin": "./dist/index.js",
     "id": "system"
   },
@@ -45,7 +45,7 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "@tessera/sdk": "^0.1.0",
+    "@kiosko/sdk": "^0.1.0",
     "@types/node": "^24.0.0",
     "esbuild": "^0.25.0",
     "typescript": "^5.9.3"

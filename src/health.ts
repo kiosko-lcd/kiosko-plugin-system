@@ -8,7 +8,7 @@ import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { availableParallelism, loadavg, platform, uptime } from 'node:os';
 import { promisify } from 'node:util';
-import { defineWidget, t, type Localized } from '@tessera/sdk';
+import { defineWidget, t, type Localized } from '@kiosko/sdk';
 import { bytes, readDisk, readHwmon, readMemory, readThermalZone, since, SYSTEM_ROOT } from './sensors.ts';
 
 const run = promisify(execFile);

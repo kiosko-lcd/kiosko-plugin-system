@@ -1,20 +1,20 @@
-# tessera-plugin-system
+# kiosko-plugin-system
 
 Machine vitals as a shared source, and a system health card.
 
-A plugin for [Tessera](https://github.com/Loksly/tessera), the widget mosaic for small USB LCD panels.
+A plugin for [Kiosko](https://github.com/kiosko-lcd/kiosko), the widget mosaic for small USB LCD panels.
 
 ![System health](docs/health.png)
 
 ## Install
 
-In Tessera, **Plugins → Install from npm** → `tessera-plugin-system`, then restart Tessera. Or from a terminal:
+In Kiosko, **Plugins → Install from npm** → `kiosko-plugin-system`, then restart Kiosko. Or from a terminal:
 
 ```sh
-npm install --prefix ~/.config/tessera/plugins tessera-plugin-system
+npm install --prefix ~/.config/kiosko/plugins kiosko-plugin-system
 ```
 
-(macOS: `~/Library/Application Support/Tessera/plugins`, Windows: `%APPDATA%\Tessera\plugins`.)
+(macOS: `~/Library/Application Support/Kiosko/plugins`, Windows: `%APPDATA%\Kiosko\plugins`.)
 
 ## Requirements
 
@@ -41,7 +41,7 @@ Disk usage, CPU temperature over the last hour, load, memory, uptime and failed 
 
 ### Machine vitals — `system/vitals`
 
-CPU usage per core, load, memory, CPU temperature (Linux), disk usage and uptime of this computer. Read every 5 s while a widget uses it. Options are set once in Tessera → Settings → Data sources.
+CPU usage per core, load, memory, CPU temperature (Linux), disk usage and uptime of this computer. Read every 5 s while a widget uses it. Options are set once in Kiosko → Settings → Data sources.
 
 | Option | Type | Default | |
 |---|---|---|---|
@@ -53,14 +53,14 @@ CPU usage per core, load, memory, CPU temperature (Linux), disk usage and uptime
 npm install
 npm test          # node:test
 npm run check     # TypeScript
-npm run build     # dist/index.js, what Tessera loads
+npm run build     # dist/index.js, what Kiosko loads
 ```
 
-To try it in a running Tessera without publishing: `tessera plugins link .` and restart Tessera.
+To try it in a running Kiosko without publishing: `kiosko plugins link .` and restart Kiosko.
 
-Working on Tessera and its plugins together: clone them side by side
-(`tessera/` and `tessera-plugins/tessera-plugin-system/`) and run `npm install` in
-`tessera/`; its workspaces link every plugin found in `../tessera-plugins`.
+Working on Kiosko and its plugins together: clone them side by side
+(`kiosko/` and `kiosko-plugins/kiosko-plugin-system/`) and run `npm install` in
+`kiosko/`; its workspaces link every plugin found in `../kiosko-plugins`.
 
 ## License
 
