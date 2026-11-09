@@ -133,7 +133,7 @@ export const health = defineWidget({
   tags: ['disk', 'temperature', 'systemd'],
   size: { min: { w: 280, h: 140 }, preferred: { w: 600, h: 440 } },
   options: t.object({
-    mounts: t.list(t.string({ format: 'path', placeholder: '/home' }), { label: { en: 'Disks (mount points)', es: 'Discos (puntos de montaje)' }, help: { en: 'Empty = every mounted disk (Linux) or the system disk.', es: 'Vacío = todos los discos montados (Linux) o el del sistema.' } }),
+    mounts: t.list(t.string({ format: 'path', risk: 'path', placeholder: '/home' }), { label: { en: 'Disks (mount points)', es: 'Discos (puntos de montaje)' }, help: { en: 'Empty = every mounted disk (Linux) or the system disk.', es: 'Vacío = todos los discos montados (Linux) o el del sistema.' } }),
     diskWarn: t.integer({ default: 90, min: 50, max: 100, unit: '%', label: { en: 'Disk warning at', es: 'Aviso de disco desde' } }),
     diskAlert: t.integer({ default: 95, min: 50, max: 100, unit: '%', label: { en: 'Disk alert at', es: 'Alerta de disco desde' } }),
     tempWarn: t.integer({ default: 80, min: 40, max: 110, unit: '°C', label: { en: 'Hot CPU at', es: 'CPU caliente desde' } }),

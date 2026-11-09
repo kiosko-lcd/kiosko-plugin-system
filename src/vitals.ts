@@ -106,7 +106,7 @@ export const vitals = defineSource({
     es: 'Uso de CPU por núcleo, carga, memoria, temperatura de la CPU (Linux), ocupación del disco y tiempo encendido de este ordenador.',
   },
   options: t.object({
-    diskPath: t.string({ default: SYSTEM_ROOT, format: 'path', label: { en: 'Disk to watch', es: 'Disco a vigilar' }, help: { en: 'Any path on it, e.g. / or /home.', es: 'Cualquier ruta suya, p. ej. / o /home.' } }),
+    diskPath: t.string({ default: SYSTEM_ROOT, format: 'path', risk: 'path', label: { en: 'Disk to watch', es: 'Disco a vigilar' }, help: { en: 'Any path on it, e.g. / or /home.', es: 'Cualquier ruta suya, p. ej. / o /home.' } }),
   }),
   intervalMs: 5000,
   read: ({ options, signal }) => readVitals({ diskPath: options.diskPath, firstSampleMs: 250, signal }),
