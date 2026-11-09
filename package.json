@@ -1,10 +1,53 @@
 {
-  "name": "@tessera/plugin-system",
+  "name": "tessera-plugin-system",
   "version": "0.1.0",
   "description": "Machine vitals (CPU, cores, temperature, memory, disk, uptime) as a shared source, and a system health card.",
   "type": "module",
   "license": "MIT",
-  "exports": { ".": { "source": "./src/index.ts", "default": "./dist/index.js" } },
-  "tessera": { "plugin": "./dist/index.js" },
-  "peerDependencies": { "@tessera/sdk": "*" }
+  "author": "Loksly",
+  "keywords": [
+    "tessera",
+    "tessera-plugin",
+    "lcd",
+    "widgets",
+    "system"
+  ],
+  "homepage": "https://github.com/Loksly/tessera-plugin-system#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Loksly/tessera-plugin-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Loksly/tessera-plugin-system/issues"
+  },
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "tessera": {
+    "plugin": "./dist/index.js",
+    "id": "system"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --conditions=source --test \"src/**/*.test.ts\"",
+    "check": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@tessera/sdk": "^0.1.0",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.3"
+  }
 }
