@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createBaseContext } from '@kiosko/sdk';
 import { demoHealth, diskMounts, pushHistory, warnings } from './health.ts';
-import { bytes, coreUsage, memAvailable, parseProcStat, readDisk, readHwmon, readThermalZone, sampleFromCpus, since } from './sensors.ts';
+import { bytes, coreUsage, memAvailable, parseProcStat, readDisk, readHwmon, readThermalZone, sampleFromCpus } from './sensors.ts';
 import { readVitals, resetCpuSampling } from './vitals.ts';
 import plugin from './index.ts';
 
@@ -56,9 +57,8 @@ test('memory, sizes and durations', () => {
   assert.equal(bytes(10_882_990_080), '11 GB');
   assert.equal(bytes(1_200_000_000_000, 'es'), '1,2 TB');
   assert.equal(bytes(1_200_000_000_000, 'en'), '1.2 TB');
-  assert.equal(since(929804), '10 d 18 h');
-  assert.equal(since(5 * 3600 + 100), '5 h');
-  assert.equal(since(700), '11 min');
+  const fmt = createBaseContext({ now: 0, locale: 'es' }).fmt;
+  assert.equal(fmt.duration(929804 * 1000), '10 d 18 h', 'uptime');
 });
 
 test('health: disk mounts of /proc/mounts, temperature history and warnings', () => {
@@ -78,14 +78,55 @@ test('health: disk mounts of /proc/mounts, temperature history and warnings', ()
   pushHistory(h, 0, 50);
   pushHistory(h, 5_000, 51);
   assert.equal(h.length, 1, 'not more than one reading every 10 s');
-  pushHistory(h, 3_700_000, 60);
-  assert.deepEqual(h, [[3_700_000, 60]], 'older than an hour is dropped');
+  pushHistory(h, 3_700_000, 60, 3_600_000);
+  assert.deepEqual(h, [[3_700_000, 60]], 'older than what is kept is dropped');
+  pushHistory(h, 3_700_000 + 2 * 3_600_000, 61);
+  assert.equal(h.length, 2, 'four hours kept by default, for any historyMs');
 
-  const th = { diskWarn: 90, diskAlert: 95, tempWarn: 80 };
-  const data = { ...demoHealth(0), disks: [{ mount: '/home', size: 100, free: 5 }, { mount: '/', size: 100, free: 50 }], cpu: { temp: 92, crit: 100 } };
+  const th = { diskWarn: 90, diskAlert: 95, tempWarn: 65, tempAlert: 80 };
+  const data = { ...demoHealth(0), disks: [{ mount: '/home', size: 100, free: 7 }, { mount: '/', size: 100, free: 50 }], cpu: { temp: 92, crit: 100 } };
   assert.deepEqual(warnings(data, th).map((w) => w.key), ['disk', 'temp']);
-  assert.deepEqual(warnings({ ...data, disks: [], cpu: { temp: 50, crit: null } }, th), []);
-  assert.deepEqual(warnings({ ...data, disks: [], cpu: null, failed: ['backup'] }, th).map((w) => w.key), ['units']);
+  assert.deepEqual(warnings(data, th, 'alert').map((w) => w.key), ['temp'], 'a disk at 93 % is amber, not red');
+  assert.deepEqual(warnings({ ...data, disks: [], cpu: { temp: 70, crit: null } }, th), [], 'an amber CPU is any long build');
+  assert.deepEqual(warnings({ ...data, disks: [], cpu: null, failed: ['backup'] }, th, 'alert').map((w) => w.key), ['units']);
+});
+
+test('health: keeps the tile only on red, and only if the user turns it on', () => {
+  const w = plugin.widgets!.find((x) => x.id === 'health')!;
+  assert.equal(w.takeOver, false);
+  const options = { ...w.options!.default, onlyWhenWarning: false };
+  const st = (data: unknown) => ({ options, data, sources: {}, now: 0, working: true }) as never;
+  const calm = demoHealth(0);
+  assert.equal(w.urgent!(st(calm)), false);
+  assert.equal(w.urgent!(st({ ...calm, disks: [{ mount: '/', size: 100, free: 3 }] })), true, 'no longer tied to onlyWhenWarning');
+  assert.equal('takeOver' in (w.options as { props: object }).props, false);
+});
+
+test('health: disks as a list with "+N more"; temperature amber and red', async () => {
+  const { createCanvas } = await import('@napi-rs/canvas');
+  const { THEMES } = await import('@kiosko/sdk');
+  const kit = await import('@loksly/lcd-canvas-kit');
+  const w = plugin.widgets!.find((x) => x.id === 'health')!;
+  const theme = THEMES[0]!;
+  const GB = 1e9;
+  const disks = ['/', '/home', '/data', '/backup', '/media/a', '/media/b'].map((mount) => ({ mount, size: 1000 * GB, free: 400 * GB }));
+  const paint = (options: Record<string, unknown>, data: object, h = 440) => {
+    const texts: { text: string; color?: string }[] = [];
+    const spy = { ...kit, drawTracked: (g: never, text: string, x: number, y: number, o: { color?: string }) => (texts.push({ text, ...(o?.color ? { color: o.color } : {}) }), (kit.drawTracked as (...a: unknown[]) => number)(g, text, x, y, o)) };
+    const g = createCanvas(600, h).getContext('2d');
+    w.render(g as never, { ...createBaseContext({ now: 0, locale: 'en' }), options: { ...w.options!.default, ...options }, data, sources: {}, working: true, box: { x: 0, y: 0, w: 600, h }, theme, fonts: theme.fonts, kit: spy, canvas: { createCanvas }, preview: true } as never);
+    return texts;
+  };
+  const many = { ...demoHealth(0), disks };
+  assert.ok(!paint({}, many).some((x) => x.text.startsWith('+')), 'six disks fit a tall tile (no longer cut at four)');
+  assert.ok(paint({ rows: 3 }, many).some((x) => x.text === '+3 more'), 'three rows: three disks and "+3 more"');
+  assert.ok(paint({}, many, 100).some((x) => /^\+\d+ more$/.test(x.text)), 'a short tile says how many are left out');
+  const big = (temp: number) => paint({ tempWarn: 65, tempAlert: 80 }, { ...demoHealth(0), cpu: { temp, crit: 100 } }).find((x) => x.text === `${temp}°`)!.color;
+  assert.equal(big(60), theme.colors.ok);
+  assert.equal(big(70), theme.colors.warn);
+  assert.equal(big(85), theme.colors.alert);
+  assert.ok(paint({ historyMs: 5_400_000 }, demoHealth(0)).some((x) => x.text.startsWith('max 1 h 30')));
+  assert.ok(paint({ historyMs: 3_600_000 }, demoHealth(0)).some((x) => x.text.startsWith('max 1 h 7')), 'a whole hour, without " 00"');
 });
 
 test('vitals: the first read waits for a second sample; a missing disk path is fine', async () => {

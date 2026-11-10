@@ -1,15 +1,15 @@
 /**
  * System health: how full the disks are, the CPU temperature (with its last
- * hour as a line, because peaks can't be seen at a glance), load, memory,
- * uptime and failed systemd units. Inspired by MMM-SystemStats; everything
- * comes from the machine itself, no network.
+ * hour, or `historyMs`, as a line, because peaks can't be seen at a glance),
+ * load, memory, uptime and failed systemd units. Inspired by MMM-SystemStats;
+ * everything comes from the machine itself, no network.
  */
 import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { availableParallelism, loadavg, platform, uptime } from 'node:os';
 import { promisify } from 'node:util';
-import { defineWidget, t, type Localized } from '@kiosko/sdk';
-import { bytes, readDisk, readHwmon, readMemory, readThermalZone, since, SYSTEM_ROOT } from './sensors.ts';
+import { defineWidget, drawMore, listLayout, listOptions, t, type Localized } from '@kiosko/sdk';
+import { bytes, readDisk, readHwmon, readMemory, readThermalZone, SYSTEM_ROOT } from './sensors.ts';
 
 const run = promisify(execFile);
 
@@ -25,7 +25,7 @@ export interface Health {
   cpu: { temp: number; crit: number | null } | null;
   /** The hottest NVMe drive. */
   nvme: number | null;
-  /** Temperatures of the last hour: [instant, degrees]. */
+  /** Temperatures of the last `historyMs`: [instant, degrees]. */
   history: [number, number][];
   /** 1-minute load average (not divided by cores); null on Windows. */
   load: number | null;
@@ -70,37 +70,48 @@ async function failedUnits(): Promise<string[]> {
 }
 
 export interface Thresholds {
+  /** Disk fill, %: amber from `diskWarn`, red from `diskAlert`. */
   diskWarn: number;
   diskAlert: number;
+  /** CPU temperature, °C: amber from `tempWarn`, red from `tempAlert`. */
   tempWarn: number;
+  tempAlert: number;
 }
 
-/** What crosses its threshold, most serious first. */
-export function warnings(h: Health, th: Thresholds): { key: 'disk' | 'temp' | 'units'; text: Localized }[] {
+/**
+ * What crosses its threshold, most serious first. At `warn` level (what
+ * `onlyWhenWarning` shows the widget for), a disk counts from its amber
+ * level; at `alert` (what keeps the tile), from its red one. The CPU counts
+ * from its red temperature at both: amber is any long build.
+ */
+export function warnings(h: Health, th: Thresholds, level: 'warn' | 'alert' = 'warn'): { key: 'disk' | 'temp' | 'units'; text: Localized }[] {
   const out: { key: 'disk' | 'temp' | 'units'; text: Localized }[] = [];
-  for (const d of h.disks) if (100 - (d.free / d.size) * 100 >= th.diskWarn) out.push({ key: 'disk', text: { en: `${d.mount} full`, es: `${d.mount} lleno` } });
-  if (h.cpu && h.cpu.temp >= th.tempWarn) out.push({ key: 'temp', text: { en: 'CPU hot', es: 'CPU caliente' } });
+  const full = level === 'alert' ? th.diskAlert : th.diskWarn;
+  for (const d of h.disks) if (100 - (d.free / d.size) * 100 >= full) out.push({ key: 'disk', text: { en: `${d.mount} full`, es: `${d.mount} lleno` } });
+  if (h.cpu && h.cpu.temp >= th.tempAlert) out.push({ key: 'temp', text: { en: 'CPU hot', es: 'CPU caliente' } });
   if (h.failed.length) out.push({ key: 'units', text: { en: 'failed units', es: 'unidades caídas' } });
   return out;
 }
 
 const HOUR = 3_600_000;
-/** The last hour of CPU temperatures, kept across fetches. */
+/** The longest `historyMs` a widget may ask for. */
+export const MAX_HISTORY_MS = 4 * HOUR;
+/** CPU temperatures, kept across fetches for the longest history any instance may show. */
 const history: [number, number][] = [];
 
-/** Adds a reading (not more than one every 10 s) and drops what's older than an hour. */
-export function pushHistory(h: [number, number][], now: number, temp: number): [number, number][] {
+/** Adds a reading (not more than one every 10 s) and drops what's older than `keepMs`. */
+export function pushHistory(h: [number, number][], now: number, temp: number, keepMs = MAX_HISTORY_MS): [number, number][] {
   if (!h.length || now - h[h.length - 1]![0] >= 10_000) h.push([now, temp]);
-  while (h.length && h[0]![0] < now - HOUR) h.shift();
+  while (h.length && h[0]![0] < now - keepMs) h.shift();
   return h;
 }
 
 export function demoHealth(now: number): Health {
   const hist: [number, number][] = [];
-  for (let i = 0; i <= 60; i++) {
-    // A calm hour with a build twenty minutes ago.
-    const bump = Math.exp(-(((i - 40) / 4) ** 2)) * 22;
-    hist.push([now - (60 - i) * 60_000, 54 + 4 * Math.sin(i / 5) + bump]);
+  for (let i = 0; i <= 240; i++) {
+    // Calm hours with a build twenty minutes ago (and a shorter one before lunch).
+    const bump = Math.exp(-(((i - 220) / 4) ** 2)) * 22 + Math.exp(-(((i - 90) / 6) ** 2)) * 14;
+    hist.push([now - (240 - i) * 60_000, 54 + 4 * Math.sin(i / 5) + bump]);
   }
   const GB = 1e9;
   return {
@@ -134,13 +145,18 @@ export const health = defineWidget({
   size: { min: { w: 280, h: 140 }, preferred: { w: 600, h: 440 } },
   options: t.object({
     mounts: t.list(t.string({ format: 'path', risk: 'path', placeholder: '/home' }), { label: { en: 'Disks (mount points)', es: 'Discos (puntos de montaje)' }, help: { en: 'Empty = every mounted disk (Linux) or the system disk.', es: 'Vacío = todos los discos montados (Linux) o el del sistema.' } }),
-    diskWarn: t.integer({ default: 90, min: 50, max: 100, unit: '%', label: { en: 'Disk warning at', es: 'Aviso de disco desde' } }),
-    diskAlert: t.integer({ default: 95, min: 50, max: 100, unit: '%', label: { en: 'Disk alert at', es: 'Alerta de disco desde' } }),
-    tempWarn: t.integer({ default: 80, min: 40, max: 110, unit: '°C', label: { en: 'Hot CPU at', es: 'CPU caliente desde' } }),
-    onlyWhenWarning: t.boolean({ label: { en: 'Only when something is wrong', es: 'Sólo si algo va mal' }, help: { en: 'Takes its turn only while a disk or the CPU crosses its threshold, or a unit has failed.', es: 'Sólo entra en el turno si un disco o la CPU pasan de su umbral, o hay una unidad caída.' } }),
+    diskWarn: t.integer({ default: 90, min: 50, max: 100, unit: '%', label: { en: 'Amber disk from', es: 'Disco ámbar desde' } }),
+    diskAlert: t.integer({ default: 95, min: 50, max: 100, unit: '%', label: { en: 'Red disk from', es: 'Disco rojo desde' } }),
+    tempWarn: t.integer({ default: 65, min: 40, max: 110, unit: '°C', label: { en: 'Amber CPU from', es: 'CPU ámbar desde' } }),
+    tempAlert: t.integer({ default: 80, min: 40, max: 110, unit: '°C', label: { en: 'Red CPU from', es: 'CPU roja desde' } }),
+    historyMs: t.duration({ default: HOUR, min: 5 * 60_000, max: MAX_HISTORY_MS, label: { en: 'Temperature history', es: 'Historial de temperatura' }, help: { en: 'How far back the CPU temperature line goes.', es: 'Hasta dónde llega hacia atrás la línea de temperatura de la CPU.' } }),
+    onlyWhenWarning: t.boolean({ label: { en: 'Only when something is wrong', es: 'Sólo si algo va mal' }, help: { en: 'Takes its turn only while a disk is amber or red, the CPU red, or a unit has failed.', es: 'Sólo entra en el turno mientras un disco esté en ámbar o rojo, la CPU en rojo o haya una unidad caída.' } }),
     systemd: t.boolean({ default: true, advanced: true, label: { en: 'Check failed systemd units', es: 'Mirar las unidades de systemd caídas' } }),
+    rows: { ...listOptions().rows, label: { en: 'Disk rows', es: 'Filas de discos' } },
   }),
   intervalMs: 30_000,
+  // Keeping the tile is opt-in: a full disk stays full for days.
+  takeOver: false,
   async fetch({ options, now }): Promise<Health> {
     let mounts = options.mounts.filter((m) => m.trim());
     if (!mounts.length && platform() === 'linux') {
@@ -161,12 +177,13 @@ export const health = defineWidget({
     const zone = temps.cpu ? undefined : readThermalZone();
     const cpu = temps.cpu ?? (zone !== undefined ? { temp: zone, crit: null } : null);
     if (cpu) pushHistory(history, now, cpu.temp);
+    const from = now - options.historyMs;
     const mem = await readMemory();
     return {
       disks,
       cpu,
       nvme: temps.nvme,
-      history: cpu ? [...history] : [],
+      history: cpu ? history.filter(([at]) => at >= from) : [],
       load: platform() === 'win32' ? null : loadavg()[0]!,
       cores: availableParallelism(),
       memUsed: mem.used,
@@ -176,8 +193,9 @@ export const health = defineWidget({
     };
   },
   visible: ({ options, data }) => Boolean(data) && (!options.onlyWhenWarning || warnings(data!, options).length > 0),
-  urgent: ({ options, data }) => Boolean(data && options.onlyWhenWarning && warnings(data, { ...options, diskWarn: options.diskAlert }).length > 0),
-  render(g, { options, data, now, box, theme, kit, locale, t: tr }) {
+  urgent: ({ options, data }) => Boolean(data && warnings(data, options, 'alert').length > 0),
+  render(g, ctx) {
+    const { options, data, now, box, theme, kit, locale, t: tr, fmt } = ctx;
     if (!data) return;
     const { colors, fonts } = theme;
     const level = (pct: number) => (pct >= options.diskAlert ? colors.alert : pct >= options.diskWarn ? colors.warn : colors.ok);
@@ -193,7 +211,7 @@ export const health = defineWidget({
       ...(data.load !== null ? [[`${tr({ en: 'load', es: 'carga' })} ${num(data.load)}`, loadCol] as [string, string]] : []),
       [`RAM ${Math.round((data.memUsed / data.memTotal) * 100)} %`, colors.inkDim],
       ...(data.nvme !== null ? [[`NVMe ${Math.round(data.nvme)}°`, colors.inkDim] as [string, string]] : []),
-      [`${tr({ en: 'up', es: 'encendido' })} ${since(data.uptime)}`, colors.inkDim],
+      [`${tr({ en: 'up', es: 'encendido' })} ${fmt.duration(data.uptime * 1000)}`, colors.inkDim],
     ];
     // What doesn't fit is dropped, from the end (the least important last).
     let x = box.x;
@@ -225,18 +243,18 @@ export const health = defineWidget({
       }
     }
     // Disk rows, sized first so the temperature can sit closer to them on tall tiles.
-    const nDisks = Math.min(data.disks.length, 4);
-    const rowH = nDisks ? Math.min(50 * Math.max(k, 0.75), diskArea.h / nDisks) : 0;
-    const rows = nDisks ? Math.max(1, Math.min(data.disks.length, Math.floor(diskArea.h / rowH + 0.1))) : 0;
-    if (tempArea && !wide) {
+    const plan = listLayout(diskArea, data.disks.length, options, { sizes: { 'one-line': { min: 16, max: 50 * Math.max(k, 0.75) } } });
+    const rowH = plan.rowH;
+    if (tempArea && !wide && plan.rows.length) {
       // Split the slack between the disks and the temperature evenly.
-      const slack = diskArea.h - rows * rowH;
+      const slack = diskArea.h - plan.rows.length * rowH - (plan.more?.h ?? 0);
       if (slack > 0) tempArea = { ...tempArea, y: tempArea.y - slack / 2 };
     }
     if (data.cpu && tempArea) {
       const tA = tempArea;
       const temp = data.cpu.temp;
-      const col = temp >= options.tempWarn ? colors.alert : temp >= options.tempWarn - 15 ? colors.warn : colors.ok;
+      const tempCol = (v: number) => (v >= options.tempAlert ? colors.alert : v >= options.tempWarn ? colors.warn : null);
+      const col = tempCol(temp) ?? colors.ok;
       const big = Math.round(Math.min(tA.h * 0.82, 76 * k * (wide ? 1.2 : 1)));
       const ty = wide ? tA.y + (tA.h + big * 0.72) / 2 : tA.y + tA.h - big * 0.12;
       const tw = kit.drawTracked(g, `${Math.round(temp)}°`, tA.x, ty, { size: big, family: fonts.sans, color: col });
@@ -249,7 +267,8 @@ export const health = defineWidget({
         g.strokeStyle = colors.surfaceEdge;
         g.lineWidth = 1;
         g.beginPath();
-        const wy = sy + sh - ((options.tempWarn - lo) / (hi - lo)) * sh;
+        // The red line, faint.
+        const wy = sy + sh - ((options.tempAlert - lo) / (hi - lo)) * sh;
         g.moveTo(sx, wy);
         g.lineTo(sx + sw, wy);
         g.stroke();
@@ -257,7 +276,7 @@ export const health = defineWidget({
         g.lineWidth = Math.max(1.5, 2.5 * k);
         g.beginPath();
         hist.forEach(([at, v], i) => {
-          const px = sx + sw - Math.min(1, (now - at) / HOUR) * sw;
+          const px = sx + sw - Math.min(1, (now - at) / options.historyMs) * sw;
           const py = sy + sh - ((Math.max(lo, v) - lo) / (hi - lo)) * sh;
           if (i) g.lineTo(px, py);
           else g.moveTo(px, py);
@@ -265,19 +284,19 @@ export const health = defineWidget({
         g.stroke();
         const max = Math.max(...hist.map(([, v]) => v));
         const ms = Math.round(Math.max(10, 20 * k));
-        kit.drawTracked(g, `${tr({ en: 'max 1 h', es: 'máx. 1 h' })} ${Math.round(max)}°`, sx + sw, sy - ms * 0.4, { size: ms, family: fonts.sans, color: max >= options.tempWarn ? colors.alert : colors.inkDim, align: 'right' });
+        kit.drawTracked(g, `${tr({ en: 'max', es: 'máx.' })} ${fmt.duration(options.historyMs, { round: 'nearest', compact: true })} ${Math.round(max)}°`, sx + sw, sy - ms * 0.4, { size: ms, family: fonts.sans, color: tempCol(max) ?? colors.inkDim, align: 'right' });
       }
     }
 
-    // Disks: name, bar, percentage and what's left.
-    if (!rows) return;
+    // Disks: name, bar, percentage and what's left; "+N more" for those that don't fit.
+    if (!plan.rows.length) return drawMore(g, ctx, plan);
     const dA = diskArea;
     const ds = Math.round(Math.max(11, Math.min(24, rowH * 0.48)));
     const mono = { size: ds, family: fonts.mono };
     const pctO = { size: Math.round(ds * 1.15), family: fonts.sans };
     const freeO = { size: Math.round(ds * 0.85), family: fonts.sans };
     const freeWord = tr({ en: 'free', es: 'libres' });
-    const shown = data.disks.slice(0, rows);
+    const shown = data.disks.slice(0, plan.rows.length);
     const nameW = Math.min(dA.w * 0.3, Math.max(...shown.map((d) => kit.measureTracked(g, d.mount, mono))) + ds * 0.6);
     const pctW = kit.measureTracked(g, '100 %', pctO) + ds * 0.4;
     const freeTexts = shown.map((d) => `${bytes(d.free, locale)} ${freeWord}`);
@@ -285,7 +304,7 @@ export const health = defineWidget({
     const withFree = dA.w - nameW - pctW - freeW >= dA.w * 0.25;
     const barX = dA.x + nameW, barW = dA.w - nameW - pctW - (withFree ? freeW : 0);
     shown.forEach((d, i) => {
-      const y = dA.y + i * rowH + rowH * 0.72;
+      const y = plan.rows[i]!.y + rowH * 0.72;
       const pct = 100 - (d.free / d.size) * 100;
       const col = level(pct);
       kit.drawTracked(g, kit.truncate(g, d.mount, nameW - ds * 0.5, mono), dA.x, y, { ...mono, color: colors.ink });
@@ -297,6 +316,7 @@ export const health = defineWidget({
       kit.drawTracked(g, `${Math.round(pct)} %`, barX + barW + pctW, y, { ...pctO, color: col, align: 'right' });
       if (withFree) kit.drawTracked(g, freeTexts[i]!, dA.x + dA.w, y, { ...freeO, color: colors.inkDim, align: 'right' });
     });
+    drawMore(g, ctx, plan);
   },
   demo: ({ now }) => ({ data: demoHealth(now) }),
 });

@@ -31,11 +31,14 @@ Disk usage, CPU temperature over the last hour, load, memory, uptime and failed 
 | Option | Type | Default | |
 |---|---|---|---|
 | `mounts` | list | `[]` | Disks (mount points). Empty = every mounted disk (Linux) or the system disk. |
-| `diskWarn` | number | `90` | Disk warning at |
-| `diskAlert` | number | `95` | Disk alert at |
-| `tempWarn` | number | `80` | Hot CPU at |
-| `onlyWhenWarning` | boolean | `false` | Only when something is wrong. Takes its turn only while a disk or the CPU crosses its threshold, or a unit has failed. |
+| `diskWarn` | number | `90` | Amber disk from |
+| `diskAlert` | number | `95` | Red disk from |
+| `tempWarn` | number | `65` | Amber CPU from |
+| `tempAlert` | number | `80` | Red CPU from |
+| `historyMs` | duration (ms) | `3600000` | Temperature history. How far back the CPU temperature line goes. |
+| `onlyWhenWarning` | boolean | `false` | Only when something is wrong. Takes its turn only while a disk is amber or red, the CPU red, or a unit has failed. |
 | `systemd` | boolean | `true` | Check failed systemd units |
+| `rows` | number | `0` | Disk rows. 0 = as many as fit. A number shows that many, in rows of a readable size (fewer when the tile is too small for them); the rest are counted in "+N more". |
 
 ## Data sources
 

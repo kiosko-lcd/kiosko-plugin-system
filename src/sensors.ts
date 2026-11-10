@@ -195,10 +195,3 @@ export function bytes(n: number, locale = 'en'): string {
   const v = n < 10 && i > 0 ? n.toFixed(1) : String(Math.round(n));
   return `${/^es(?:$|[-_])/i.test(locale) ? v.replace('.', ',') : v} ${units[i]}`;
 }
-
-/** "3 d 4 h", "5 h", "12 min". */
-export function since(seconds: number): string {
-  const d = Math.floor(seconds / 86400), h = Math.floor((seconds % 86400) / 3600);
-  if (d > 0) return h ? `${d} d ${h} h` : `${d} d`;
-  return h > 0 ? `${h} h` : `${Math.floor(seconds / 60)} min`;
-}
