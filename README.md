@@ -20,6 +20,11 @@ npm install --prefix ~/.config/kiosko/plugins kiosko-plugin-system
 
 - Works everywhere; CPU temperature and failed units are read on Linux only.
 
+## What it does on your machine
+
+- **Runs**: `systemctl`.
+- **Reads**: `/proc`, `/sys`.
+
 ## Widgets
 
 ### System health — `system/health`
