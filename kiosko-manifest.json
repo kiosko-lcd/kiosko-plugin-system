@@ -1,0 +1,321 @@
+{
+  "manifest": 1,
+  "id": "system",
+  "package": "kiosko-plugin-system",
+  "name": {
+    "en": "System",
+    "es": "Sistema"
+  },
+  "version": "0.2.1",
+  "description": {
+    "en": "Machine vitals as a shared source, and a system health card.",
+    "es": "Los vitales de la máquina como fuente compartida, y una tarjeta de salud del sistema."
+  },
+  "author": "Kiosko",
+  "license": "MIT",
+  "homepage": "https://github.com/kiosko-lcd/kiosko-plugin-system#readme",
+  "repository": "https://github.com/kiosko-lcd/kiosko-plugin-system.git",
+  "icon": "cpu",
+  "sdk": "^0.2.0",
+  "platforms": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "languages": [
+    "en",
+    "es"
+  ],
+  "categories": [
+    "system"
+  ],
+  "tags": [
+    "disk",
+    "temperature",
+    "systemd"
+  ],
+  "permissions": {
+    "exec": [
+      "systemctl"
+    ],
+    "files": [
+      "/proc",
+      "/sys"
+    ]
+  },
+  "riskyOptions": [
+    {
+      "path": "system/vitals: diskPath",
+      "risk": [
+        "path"
+      ],
+      "secret": false
+    },
+    {
+      "path": "system/health: mounts",
+      "risk": [
+        "path"
+      ],
+      "secret": false
+    }
+  ],
+  "requires": [],
+  "optional": [],
+  "widgets": [
+    {
+      "type": "system/health",
+      "name": {
+        "en": "System health",
+        "es": "Salud del PC"
+      },
+      "description": {
+        "en": "Disk usage, CPU temperature over the last hour, load, memory, uptime and failed systemd units of this computer.",
+        "es": "Ocupación de los discos, temperatura de la CPU en la última hora, carga, memoria, tiempo encendido y unidades de systemd caídas de este ordenador."
+      },
+      "icon": "activity",
+      "category": "system",
+      "tags": [
+        "disk",
+        "temperature",
+        "systemd"
+      ],
+      "size": {
+        "min": {
+          "w": 280,
+          "h": 140
+        },
+        "preferred": {
+          "w": 600,
+          "h": 440
+        }
+      },
+      "chrome": "card",
+      "sources": [],
+      "options": {
+        "default": {
+          "mounts": [],
+          "diskWarn": 90,
+          "diskAlert": 95,
+          "tempWarn": 65,
+          "tempAlert": 80,
+          "historyMs": 3600000,
+          "onlyWhenWarning": false,
+          "systemd": true,
+          "rows": 0
+        },
+        "x-ui": {},
+        "type": "object",
+        "properties": {
+          "mounts": {
+            "title": "Disks (mount points)",
+            "description": "Empty = every mounted disk (Linux) or the system disk.",
+            "default": [],
+            "x-ui": {
+              "label": {
+                "en": "Disks (mount points)",
+                "es": "Discos (puntos de montaje)"
+              },
+              "help": {
+                "en": "Empty = every mounted disk (Linux) or the system disk.",
+                "es": "Vacío = todos los discos montados (Linux) o el del sistema."
+              }
+            },
+            "type": "array",
+            "items": {
+              "default": "",
+              "x-ui": {
+                "placeholder": "/home",
+                "format": "path"
+              },
+              "x-risk": "path",
+              "type": "string"
+            }
+          },
+          "diskWarn": {
+            "title": "Amber disk from",
+            "default": 90,
+            "x-ui": {
+              "label": {
+                "en": "Amber disk from",
+                "es": "Disco ámbar desde"
+              },
+              "unit": "%"
+            },
+            "type": "integer",
+            "minimum": 50,
+            "maximum": 100
+          },
+          "diskAlert": {
+            "title": "Red disk from",
+            "default": 95,
+            "x-ui": {
+              "label": {
+                "en": "Red disk from",
+                "es": "Disco rojo desde"
+              },
+              "unit": "%"
+            },
+            "type": "integer",
+            "minimum": 50,
+            "maximum": 100
+          },
+          "tempWarn": {
+            "title": "Amber CPU from",
+            "default": 65,
+            "x-ui": {
+              "label": {
+                "en": "Amber CPU from",
+                "es": "CPU ámbar desde"
+              },
+              "unit": "°C"
+            },
+            "type": "integer",
+            "minimum": 40,
+            "maximum": 110
+          },
+          "tempAlert": {
+            "title": "Red CPU from",
+            "default": 80,
+            "x-ui": {
+              "label": {
+                "en": "Red CPU from",
+                "es": "CPU roja desde"
+              },
+              "unit": "°C"
+            },
+            "type": "integer",
+            "minimum": 40,
+            "maximum": 110
+          },
+          "historyMs": {
+            "title": "Temperature history",
+            "description": "How far back the CPU temperature line goes.",
+            "default": 3600000,
+            "x-ui": {
+              "label": {
+                "en": "Temperature history",
+                "es": "Historial de temperatura"
+              },
+              "help": {
+                "en": "How far back the CPU temperature line goes.",
+                "es": "Hasta dónde llega hacia atrás la línea de temperatura de la CPU."
+              },
+              "unit": "ms"
+            },
+            "type": "integer",
+            "minimum": 300000,
+            "maximum": 14400000
+          },
+          "onlyWhenWarning": {
+            "title": "Only when something is wrong",
+            "description": "Takes its turn only while a disk is amber or red, the CPU red, or a unit has failed.",
+            "default": false,
+            "x-ui": {
+              "label": {
+                "en": "Only when something is wrong",
+                "es": "Sólo si algo va mal"
+              },
+              "help": {
+                "en": "Takes its turn only while a disk is amber or red, the CPU red, or a unit has failed.",
+                "es": "Sólo entra en el turno mientras un disco esté en ámbar o rojo, la CPU en rojo o haya una unidad caída."
+              }
+            },
+            "type": "boolean"
+          },
+          "systemd": {
+            "title": "Check failed systemd units",
+            "default": true,
+            "x-ui": {
+              "label": {
+                "en": "Check failed systemd units",
+                "es": "Mirar las unidades de systemd caídas"
+              },
+              "advanced": true
+            },
+            "type": "boolean"
+          },
+          "rows": {
+            "title": "Disk rows",
+            "description": "0 = as many as fit. A number shows that many, in rows of a readable size (fewer when the tile is too small for them); the rest are counted in \"+N more\".",
+            "default": 0,
+            "x-ui": {
+              "label": {
+                "en": "Disk rows",
+                "es": "Filas de discos"
+              },
+              "help": {
+                "en": "0 = as many as fit. A number shows that many, in rows of a readable size (fewer when the tile is too small for them); the rest are counted in \"+N more\".",
+                "es": "0 = las que quepan. Con un número se ven esas, en filas de un tamaño legible (menos si la tesela no da para ellas); el resto se cuenta en «+N más»."
+              }
+            },
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          }
+        }
+      },
+      "screenshot": "docs/health.png",
+      "animated": false,
+      "urgent": true
+    }
+  ],
+  "sources": [
+    {
+      "type": "system/vitals",
+      "name": {
+        "en": "Machine vitals",
+        "es": "Vitales de la máquina"
+      },
+      "description": {
+        "en": "CPU usage per core, load, memory, CPU temperature (Linux), disk usage and uptime of this computer.",
+        "es": "Uso de CPU por núcleo, carga, memoria, temperatura de la CPU (Linux), ocupación del disco y tiempo encendido de este ordenador."
+      },
+      "polled": true,
+      "intervalMs": 5000,
+      "options": {
+        "default": {
+          "diskPath": "/"
+        },
+        "x-ui": {},
+        "type": "object",
+        "properties": {
+          "diskPath": {
+            "title": "Disk to watch",
+            "description": "Any path on it, e.g. / or /home.",
+            "default": "/",
+            "x-ui": {
+              "label": {
+                "en": "Disk to watch",
+                "es": "Disco a vigilar"
+              },
+              "help": {
+                "en": "Any path on it, e.g. / or /home.",
+                "es": "Cualquier ruta suya, p. ej. / o /home."
+              },
+              "format": "path"
+            },
+            "x-risk": "path",
+            "type": "string"
+          }
+        }
+      }
+    }
+  ],
+  "interludes": [],
+  "templates": [
+    {
+      "id": "monitor",
+      "name": {
+        "en": "System monitor",
+        "es": "Monitor del sistema"
+      },
+      "icon": "cpu",
+      "widgets": [
+        "vitals/vitals",
+        "system/health",
+        "gpu/cards",
+        "usage/rail"
+      ]
+    }
+  ]
+}
