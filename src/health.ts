@@ -87,9 +87,9 @@ export interface Thresholds {
 export function warnings(h: Health, th: Thresholds, level: 'warn' | 'alert' = 'warn'): { key: 'disk' | 'temp' | 'units'; text: Localized }[] {
   const out: { key: 'disk' | 'temp' | 'units'; text: Localized }[] = [];
   const full = level === 'alert' ? th.diskAlert : th.diskWarn;
-  for (const d of h.disks) if (100 - (d.free / d.size) * 100 >= full) out.push({ key: 'disk', text: { en: `${d.mount} full`, es: `${d.mount} lleno`, 'zh-Hant': `${d.mount} 已滿`, 'zh-Hans': `${d.mount} 已满` } });
-  if (h.cpu && h.cpu.temp >= th.tempAlert) out.push({ key: 'temp', text: { en: 'CPU hot', es: 'CPU caliente', 'zh-Hant': 'CPU 過熱', 'zh-Hans': 'CPU 过热' } });
-  if (h.failed.length) out.push({ key: 'units', text: { en: 'failed units', es: 'unidades caídas', 'zh-Hant': '失敗的單元', 'zh-Hans': '失败的单元' } });
+  for (const d of h.disks) if (100 - (d.free / d.size) * 100 >= full) out.push({ key: 'disk', text: { en: `${d.mount} full`, es: `${d.mount} lleno`, de: `${d.mount} voll`, 'zh-Hant': `${d.mount} 已滿`, 'zh-Hans': `${d.mount} 已满` } });
+  if (h.cpu && h.cpu.temp >= th.tempAlert) out.push({ key: 'temp', text: { en: 'CPU hot', es: 'CPU caliente', de: 'CPU heiß', 'zh-Hant': 'CPU 過熱', 'zh-Hans': 'CPU 过热' } });
+  if (h.failed.length) out.push({ key: 'units', text: { en: 'failed units', es: 'unidades caídas', de: 'fehlgeschlagene Units', 'zh-Hant': '失敗的單元', 'zh-Hans': '失败的单元' } });
   return out;
 }
 
@@ -134,10 +134,11 @@ export function demoHealth(now: number): Health {
 
 export const health = defineWidget({
   id: 'health',
-  name: { en: 'System health', es: 'Salud del PC', 'zh-Hant': '系統健康', 'zh-Hans': '系统健康' },
+  name: { en: 'System health', es: 'Salud del PC', de: 'Systemzustand', 'zh-Hant': '系統健康', 'zh-Hans': '系统健康' },
   description: {
     en: 'Disk usage, CPU temperature over the last hour, load, memory, uptime and failed systemd units of this computer.',
     es: 'Ocupación de los discos, temperatura de la CPU en la última hora, carga, memoria, tiempo encendido y unidades de systemd caídas de este ordenador.',
+    de: 'Belegung der Laufwerke, CPU-Temperatur der letzten Stunde, Last, Arbeitsspeicher, Betriebszeit und fehlgeschlagene systemd-Units dieses Computers.',
     'zh-Hant': '這台電腦的磁碟用量、最近一小時的 CPU 溫度、負載、記憶體、運作時間與失敗的 systemd 單元。',
     'zh-Hans': '这台电脑的磁盘占用、最近一小时的 CPU 温度、负载、内存、运行时间和失败的 systemd 单元。',
   },
@@ -146,15 +147,15 @@ export const health = defineWidget({
   tags: ['disk', 'temperature', 'systemd'],
   size: { min: { w: 280, h: 140 }, preferred: { w: 600, h: 440 } },
   options: t.object({
-    mounts: t.list(t.string({ format: 'path', risk: 'path', placeholder: '/home' }), { label: { en: 'Disks (mount points)', es: 'Discos (puntos de montaje)', 'zh-Hant': '磁碟（掛載點）', 'zh-Hans': '磁盘（挂载点）' }, help: { en: 'Empty = every mounted disk (Linux) or the system disk.', es: 'Vacío = todos los discos montados (Linux) o el del sistema.', 'zh-Hant': '留空 = 所有已掛載的磁碟（Linux）或系統磁碟。', 'zh-Hans': '留空 = 所有已挂载的磁盘（Linux）或系统盘。' } }),
-    diskWarn: t.integer({ default: 90, min: 50, max: 100, unit: '%', label: { en: 'Amber disk from', es: 'Disco ámbar desde', 'zh-Hant': '磁碟琥珀色門檻', 'zh-Hans': '磁盘琥珀色阈值' } }),
-    diskAlert: t.integer({ default: 95, min: 50, max: 100, unit: '%', label: { en: 'Red disk from', es: 'Disco rojo desde', 'zh-Hant': '磁碟紅色門檻', 'zh-Hans': '磁盘红色阈值' } }),
-    tempWarn: t.integer({ default: 65, min: 40, max: 110, unit: '°C', label: { en: 'Amber CPU from', es: 'CPU ámbar desde', 'zh-Hant': 'CPU 琥珀色門檻', 'zh-Hans': 'CPU 琥珀色阈值' } }),
-    tempAlert: t.integer({ default: 80, min: 40, max: 110, unit: '°C', label: { en: 'Red CPU from', es: 'CPU roja desde', 'zh-Hant': 'CPU 紅色門檻', 'zh-Hans': 'CPU 红色阈值' } }),
-    historyMs: t.duration({ default: HOUR, min: 5 * 60_000, max: MAX_HISTORY_MS, label: { en: 'Temperature history', es: 'Historial de temperatura', 'zh-Hant': '溫度歷史', 'zh-Hans': '温度历史' }, help: { en: 'How far back the CPU temperature line goes.', es: 'Hasta dónde llega hacia atrás la línea de temperatura de la CPU.', 'zh-Hant': 'CPU 溫度折線可回溯多久。', 'zh-Hans': 'CPU 温度折线可回溯多久。' } }),
-    onlyWhenWarning: t.boolean({ label: { en: 'Only when something is wrong', es: 'Sólo si algo va mal', 'zh-Hant': '僅在有異常時', 'zh-Hans': '仅在异常时' }, help: { en: 'Takes its turn only while a disk is amber or red, the CPU red, or a unit has failed.', es: 'Sólo entra en el turno mientras un disco esté en ámbar o rojo, la CPU en rojo o haya una unidad caída.', 'zh-Hant': '只有在磁碟呈琥珀色或紅色、CPU 呈紅色或有單元失敗時才參與輪播。', 'zh-Hans': '只有在磁盘为琥珀色或红色、CPU 为红色或有单元失败时才参与轮播。' } }),
-    systemd: t.boolean({ default: true, advanced: true, label: { en: 'Check failed systemd units', es: 'Mirar las unidades de systemd caídas', 'zh-Hant': '檢查失敗的 systemd 單元', 'zh-Hans': '检查失败的 systemd 单元' } }),
-    rows: { ...listOptions().rows, label: { en: 'Disk rows', es: 'Filas de discos', 'zh-Hant': '磁碟列數', 'zh-Hans': '磁盘行数' } },
+    mounts: t.list(t.string({ format: 'path', risk: 'path', placeholder: '/home' }), { label: { en: 'Disks (mount points)', es: 'Discos (puntos de montaje)', de: 'Laufwerke (Einhängepunkte)', 'zh-Hant': '磁碟（掛載點）', 'zh-Hans': '磁盘（挂载点）' }, help: { en: 'Empty = every mounted disk (Linux) or the system disk.', es: 'Vacío = todos los discos montados (Linux) o el del sistema.', de: 'Leer = alle eingehängten Laufwerke (Linux) bzw. das Systemlaufwerk.', 'zh-Hant': '留空 = 所有已掛載的磁碟（Linux）或系統磁碟。', 'zh-Hans': '留空 = 所有已挂载的磁盘（Linux）或系统盘。' } }),
+    diskWarn: t.integer({ default: 90, min: 50, max: 100, unit: '%', label: { en: 'Amber disk from', es: 'Disco ámbar desde', de: 'Laufwerk gelb ab', 'zh-Hant': '磁碟琥珀色門檻', 'zh-Hans': '磁盘琥珀色阈值' } }),
+    diskAlert: t.integer({ default: 95, min: 50, max: 100, unit: '%', label: { en: 'Red disk from', es: 'Disco rojo desde', de: 'Laufwerk rot ab', 'zh-Hant': '磁碟紅色門檻', 'zh-Hans': '磁盘红色阈值' } }),
+    tempWarn: t.integer({ default: 65, min: 40, max: 110, unit: '°C', label: { en: 'Amber CPU from', es: 'CPU ámbar desde', de: 'CPU gelb ab', 'zh-Hant': 'CPU 琥珀色門檻', 'zh-Hans': 'CPU 琥珀色阈值' } }),
+    tempAlert: t.integer({ default: 80, min: 40, max: 110, unit: '°C', label: { en: 'Red CPU from', es: 'CPU roja desde', de: 'CPU rot ab', 'zh-Hant': 'CPU 紅色門檻', 'zh-Hans': 'CPU 红色阈值' } }),
+    historyMs: t.duration({ default: HOUR, min: 5 * 60_000, max: MAX_HISTORY_MS, label: { en: 'Temperature history', es: 'Historial de temperatura', de: 'Temperaturverlauf', 'zh-Hant': '溫度歷史', 'zh-Hans': '温度历史' }, help: { en: 'How far back the CPU temperature line goes.', es: 'Hasta dónde llega hacia atrás la línea de temperatura de la CPU.', de: 'Wie weit die Linie der CPU-Temperatur zurückreicht.', 'zh-Hant': 'CPU 溫度折線可回溯多久。', 'zh-Hans': 'CPU 温度折线可回溯多久。' } }),
+    onlyWhenWarning: t.boolean({ label: { en: 'Only when something is wrong', es: 'Sólo si algo va mal', de: 'Nur bei Problemen', 'zh-Hant': '僅在有異常時', 'zh-Hans': '仅在异常时' }, help: { en: 'Takes its turn only while a disk is amber or red, the CPU red, or a unit has failed.', es: 'Sólo entra en el turno mientras un disco esté en ámbar o rojo, la CPU en rojo o haya una unidad caída.', de: 'Ist nur an der Reihe, solange ein Laufwerk gelb oder rot ist, die CPU rot ist oder eine Unit fehlgeschlagen ist.', 'zh-Hant': '只有在磁碟呈琥珀色或紅色、CPU 呈紅色或有單元失敗時才參與輪播。', 'zh-Hans': '只有在磁盘为琥珀色或红色、CPU 为红色或有单元失败时才参与轮播。' } }),
+    systemd: t.boolean({ default: true, advanced: true, label: { en: 'Check failed systemd units', es: 'Mirar las unidades de systemd caídas', de: 'Fehlgeschlagene systemd-Units prüfen', 'zh-Hant': '檢查失敗的 systemd 單元', 'zh-Hans': '检查失败的 systemd 单元' } }),
+    rows: { ...listOptions().rows, label: { en: 'Disk rows', es: 'Filas de discos', de: 'Laufwerkszeilen', 'zh-Hant': '磁碟列數', 'zh-Hans': '磁盘行数' } },
   }),
   intervalMs: 30_000,
   // Keeping the tile is opt-in: a full disk stays full for days.
@@ -210,10 +211,10 @@ export const health = defineWidget({
     const loadCol = data.load === null ? colors.inkDim : data.load >= data.cores ? colors.alert : data.load >= data.cores * 0.7 ? colors.warn : colors.inkDim;
     const num = (n: number) => n.toLocaleString(locale, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
     const parts: [string, string][] = [
-      ...(data.load !== null ? [[`${tr({ en: 'load', es: 'carga', 'zh-Hant': '負載', 'zh-Hans': '负载' })} ${num(data.load)}`, loadCol] as [string, string]] : []),
+      ...(data.load !== null ? [[`${tr({ en: 'load', es: 'carga', de: 'Last', 'zh-Hant': '負載', 'zh-Hans': '负载' })} ${num(data.load)}`, loadCol] as [string, string]] : []),
       [`RAM ${Math.round((data.memUsed / data.memTotal) * 100)} %`, colors.inkDim],
       ...(data.nvme !== null ? [[`NVMe ${Math.round(data.nvme)}°`, colors.inkDim] as [string, string]] : []),
-      [`${tr({ en: 'up', es: 'encendido', 'zh-Hant': '運作', 'zh-Hans': '运行' })} ${fmt.duration(data.uptime * 1000)}`, colors.inkDim],
+      [`${tr({ en: 'up', es: 'encendido', de: 'läuft', 'zh-Hant': '運作', 'zh-Hans': '运行' })} ${fmt.duration(data.uptime * 1000)}`, colors.inkDim],
     ];
     // What doesn't fit is dropped, from the end (the least important last).
     let x = box.x;
@@ -222,7 +223,7 @@ export const health = defineWidget({
       x += kit.drawTracked(g, s, x, footY, { size: fs, family: fonts.sans, color: col }) + fs;
     }
     if (data.failed.length) {
-      const s = `${tr({ en: 'failed', es: 'caídas', 'zh-Hant': '失敗', 'zh-Hans': '失败' })}: ${data.failed.join(', ')}`;
+      const s = `${tr({ en: 'failed', es: 'caídas', de: 'fehlgeschlagen', 'zh-Hant': '失敗', 'zh-Hans': '失败' })}: ${data.failed.join(', ')}`;
       kit.drawTracked(g, kit.truncate(g, s, box.w, { size: fs, family: fonts.sans }), box.x, bottom, { size: fs, family: fonts.sans, color: colors.alert });
       bottom -= fs * 1.3;
     }
@@ -287,7 +288,7 @@ export const health = defineWidget({
         const max = Math.max(...hist.map(([, v]) => v));
         const ms = Math.round(Math.max(10, 20 * k));
         // One template per language, not fragments: Chinese turns it round (1 小時內最高 76°).
-        const peak = tr({ en: 'max {span} {t}°', es: 'máx. {span} {t}°', 'zh-Hant': '{span}內最高 {t}°', 'zh-Hans': '{span}内最高 {t}°' })
+        const peak = tr({ en: 'max {span} {t}°', es: 'máx. {span} {t}°', de: 'max. {span} {t}°', 'zh-Hant': '{span}內最高 {t}°', 'zh-Hans': '{span}内最高 {t}°' })
           .replace('{span}', fmt.duration(options.historyMs, { round: 'nearest', compact: true }))
           .replace('{t}', String(Math.round(max)));
         kit.drawTracked(g, peak, sx + sw, sy - ms * 0.4, { size: ms, family: fonts.sans, color: tempCol(max) ?? colors.inkDim, align: 'right' });
@@ -301,7 +302,7 @@ export const health = defineWidget({
     const mono = { size: ds, family: fonts.mono };
     const pctO = { size: Math.round(ds * 1.15), family: fonts.sans };
     const freeO = { size: Math.round(ds * 0.85), family: fonts.sans };
-    const freeWord = tr({ en: 'free', es: 'libres', 'zh-Hant': '可用', 'zh-Hans': '可用' });
+    const freeWord = tr({ en: 'free', es: 'libres', de: 'frei', 'zh-Hant': '可用', 'zh-Hans': '可用' });
     const shown = data.disks.slice(0, plan.rows.length);
     const nameW = Math.min(dA.w * 0.3, Math.max(...shown.map((d) => kit.measureTracked(g, d.mount, mono))) + ds * 0.6);
     const pctW = kit.measureTracked(g, '100 %', pctO) + ds * 0.4;

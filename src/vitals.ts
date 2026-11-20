@@ -100,15 +100,16 @@ export function demoVitals(): SystemSnapshot {
 
 export const vitals = defineSource({
   id: 'vitals',
-  name: { en: 'Machine vitals', es: 'Vitales de la máquina', 'zh-Hant': '機器指標', 'zh-Hans': '机器指标' },
+  name: { en: 'Machine vitals', es: 'Vitales de la máquina', de: 'Vitalwerte des Rechners', 'zh-Hant': '機器指標', 'zh-Hans': '机器指标' },
   description: {
     en: 'CPU usage per core, load, memory, CPU temperature (Linux), disk usage and uptime of this computer.',
     es: 'Uso de CPU por núcleo, carga, memoria, temperatura de la CPU (Linux), ocupación del disco y tiempo encendido de este ordenador.',
+    de: 'CPU-Auslastung pro Kern, Last, Arbeitsspeicher, CPU-Temperatur (Linux), Belegung des Laufwerks und Betriebszeit dieses Computers.',
     'zh-Hant': '這台電腦每個核心的 CPU 使用率、負載、記憶體、CPU 溫度（Linux）、磁碟用量與運作時間。',
     'zh-Hans': '这台电脑每个核心的 CPU 使用率、负载、内存、CPU 温度（Linux）、磁盘占用和运行时间。',
   },
   options: t.object({
-    diskPath: t.string({ default: SYSTEM_ROOT, format: 'path', risk: 'path', label: { en: 'Disk to watch', es: 'Disco a vigilar', 'zh-Hant': '監看的磁碟', 'zh-Hans': '监控的磁盘' }, help: { en: 'Any path on it, e.g. / or /home.', es: 'Cualquier ruta suya, p. ej. / o /home.', 'zh-Hant': '該磁碟上的任一路徑，例如 / 或 /home。', 'zh-Hans': '该磁盘上的任意路径，例如 / 或 /home。' } }),
+    diskPath: t.string({ default: SYSTEM_ROOT, format: 'path', risk: 'path', label: { en: 'Disk to watch', es: 'Disco a vigilar', de: 'Überwachtes Laufwerk', 'zh-Hant': '監看的磁碟', 'zh-Hans': '监控的磁盘' }, help: { en: 'Any path on it, e.g. / or /home.', es: 'Cualquier ruta suya, p. ej. / o /home.', de: 'Ein beliebiger Pfad darauf, z. B. / oder /home.', 'zh-Hant': '該磁碟上的任一路徑，例如 / 或 /home。', 'zh-Hans': '该磁盘上的任意路径，例如 / 或 /home。' } }),
   }),
   intervalMs: 5000,
   read: ({ options, signal }) => readVitals({ diskPath: options.diskPath, firstSampleMs: 250, signal }),
