@@ -184,7 +184,7 @@ export async function readDisk(path: string): Promise<{ used: number; total: num
 /** The root of the system disk: `/`, or `C:\` on Windows. */
 export const SYSTEM_ROOT = platform() === 'win32' ? 'C:\\' : '/';
 
-/** "11 GB", "850 MB", "1.2 TB" (decimal comma in Spanish). */
+/** "11 GB", "850 MB", "1.2 TB" ("1,2 TB" where the language writes a decimal comma). */
 export function bytes(n: number, locale = 'en'): string {
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
   let i = 0;
@@ -192,6 +192,12 @@ export function bytes(n: number, locale = 'en'): string {
     n /= 1000;
     i++;
   }
-  const v = n < 10 && i > 0 ? n.toFixed(1) : String(Math.round(n));
-  return `${/^es(?:$|[-_])/i.test(locale) ? v.replace('.', ',') : v} ${units[i]}`;
+  const digits = n < 10 && i > 0 ? 1 : 0;
+  let v: string;
+  try {
+    v = new Intl.NumberFormat(locale.replace(/_/g, '-'), { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: false }).format(digits ? n : Math.round(n));
+  } catch {
+    v = digits ? n.toFixed(1) : String(Math.round(n));
+  }
+  return `${v} ${units[i]}`;
 }
