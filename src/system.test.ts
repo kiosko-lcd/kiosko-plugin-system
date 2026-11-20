@@ -57,6 +57,7 @@ test('memory, sizes and durations', () => {
   assert.equal(bytes(10_882_990_080), '11 GB');
   assert.equal(bytes(1_200_000_000_000, 'es'), '1,2 TB');
   assert.equal(bytes(1_200_000_000_000, 'en'), '1.2 TB');
+  assert.equal(bytes(1_200_000_000_000, 'de'), '1,2 TB');
   const fmt = createBaseContext({ now: 0, locale: 'es' }).fmt;
   assert.equal(fmt.duration(929804 * 1000), '10 d 18 h', 'uptime');
 });
