@@ -15,6 +15,7 @@ export default definePlugin({
   id: 'system',
   name: { en: 'System', es: 'Sistema', 'zh-Hant': '系統', 'zh-Hans': '系统' },
   version: '0.2.1',
+  languages: ['en', 'es', 'zh-Hant', 'zh-Hans'],
   sdk: '^0.2.0',
   permissions: { exec: ['systemctl'], files: ['/proc', '/sys'] },
   description: { en: 'Machine vitals as a shared source, and a system health card.', es: 'Los vitales de la máquina como fuente compartida, y una tarjeta de salud del sistema.', 'zh-Hant': '以共用資料來源提供本機的各項指標，並附系統健康卡片。', 'zh-Hans': '以共享数据源提供本机各项指标，并附系统健康卡片。' },
