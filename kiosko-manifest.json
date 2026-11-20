@@ -4,12 +4,16 @@
   "package": "kiosko-plugin-system",
   "name": {
     "en": "System",
-    "es": "Sistema"
+    "es": "Sistema",
+    "zh-Hant": "系統",
+    "zh-Hans": "系统"
   },
   "version": "0.2.1",
   "description": {
     "en": "Machine vitals as a shared source, and a system health card.",
-    "es": "Los vitales de la máquina como fuente compartida, y una tarjeta de salud del sistema."
+    "es": "Los vitales de la máquina como fuente compartida, y una tarjeta de salud del sistema.",
+    "zh-Hant": "以共用資料來源提供本機的各項指標，並附系統健康卡片。",
+    "zh-Hans": "以共享数据源提供本机各项指标，并附系统健康卡片。"
   },
   "author": "Kiosko",
   "license": "MIT",
@@ -24,7 +28,9 @@
   ],
   "languages": [
     "en",
-    "es"
+    "es",
+    "zh-Hant",
+    "zh-Hans"
   ],
   "categories": [
     "system"
@@ -66,11 +72,15 @@
       "type": "system/health",
       "name": {
         "en": "System health",
-        "es": "Salud del PC"
+        "es": "Salud del PC",
+        "zh-Hant": "系統健康",
+        "zh-Hans": "系统健康"
       },
       "description": {
         "en": "Disk usage, CPU temperature over the last hour, load, memory, uptime and failed systemd units of this computer.",
-        "es": "Ocupación de los discos, temperatura de la CPU en la última hora, carga, memoria, tiempo encendido y unidades de systemd caídas de este ordenador."
+        "es": "Ocupación de los discos, temperatura de la CPU en la última hora, carga, memoria, tiempo encendido y unidades de systemd caídas de este ordenador.",
+        "zh-Hant": "這台電腦的磁碟用量、最近一小時的 CPU 溫度、負載、記憶體、運作時間與失敗的 systemd 單元。",
+        "zh-Hans": "这台电脑的磁盘占用、最近一小时的 CPU 温度、负载、内存、运行时间和失败的 systemd 单元。"
       },
       "icon": "activity",
       "category": "system",
@@ -113,11 +123,15 @@
             "x-ui": {
               "label": {
                 "en": "Disks (mount points)",
-                "es": "Discos (puntos de montaje)"
+                "es": "Discos (puntos de montaje)",
+                "zh-Hant": "磁碟（掛載點）",
+                "zh-Hans": "磁盘（挂载点）"
               },
               "help": {
                 "en": "Empty = every mounted disk (Linux) or the system disk.",
-                "es": "Vacío = todos los discos montados (Linux) o el del sistema."
+                "es": "Vacío = todos los discos montados (Linux) o el del sistema.",
+                "zh-Hant": "留空 = 所有已掛載的磁碟（Linux）或系統磁碟。",
+                "zh-Hans": "留空 = 所有已挂载的磁盘（Linux）或系统盘。"
               }
             },
             "type": "array",
@@ -137,7 +151,9 @@
             "x-ui": {
               "label": {
                 "en": "Amber disk from",
-                "es": "Disco ámbar desde"
+                "es": "Disco ámbar desde",
+                "zh-Hant": "磁碟琥珀色門檻",
+                "zh-Hans": "磁盘琥珀色阈值"
               },
               "unit": "%"
             },
@@ -151,7 +167,9 @@
             "x-ui": {
               "label": {
                 "en": "Red disk from",
-                "es": "Disco rojo desde"
+                "es": "Disco rojo desde",
+                "zh-Hant": "磁碟紅色門檻",
+                "zh-Hans": "磁盘红色阈值"
               },
               "unit": "%"
             },
@@ -165,7 +183,9 @@
             "x-ui": {
               "label": {
                 "en": "Amber CPU from",
-                "es": "CPU ámbar desde"
+                "es": "CPU ámbar desde",
+                "zh-Hant": "CPU 琥珀色門檻",
+                "zh-Hans": "CPU 琥珀色阈值"
               },
               "unit": "°C"
             },
@@ -179,7 +199,9 @@
             "x-ui": {
               "label": {
                 "en": "Red CPU from",
-                "es": "CPU roja desde"
+                "es": "CPU roja desde",
+                "zh-Hant": "CPU 紅色門檻",
+                "zh-Hans": "CPU 红色阈值"
               },
               "unit": "°C"
             },
@@ -194,11 +216,15 @@
             "x-ui": {
               "label": {
                 "en": "Temperature history",
-                "es": "Historial de temperatura"
+                "es": "Historial de temperatura",
+                "zh-Hant": "溫度歷史",
+                "zh-Hans": "温度历史"
               },
               "help": {
                 "en": "How far back the CPU temperature line goes.",
-                "es": "Hasta dónde llega hacia atrás la línea de temperatura de la CPU."
+                "es": "Hasta dónde llega hacia atrás la línea de temperatura de la CPU.",
+                "zh-Hant": "CPU 溫度折線可回溯多久。",
+                "zh-Hans": "CPU 温度折线可回溯多久。"
               },
               "unit": "ms"
             },
@@ -213,11 +239,15 @@
             "x-ui": {
               "label": {
                 "en": "Only when something is wrong",
-                "es": "Sólo si algo va mal"
+                "es": "Sólo si algo va mal",
+                "zh-Hant": "僅在有異常時",
+                "zh-Hans": "仅在异常时"
               },
               "help": {
                 "en": "Takes its turn only while a disk is amber or red, the CPU red, or a unit has failed.",
-                "es": "Sólo entra en el turno mientras un disco esté en ámbar o rojo, la CPU en rojo o haya una unidad caída."
+                "es": "Sólo entra en el turno mientras un disco esté en ámbar o rojo, la CPU en rojo o haya una unidad caída.",
+                "zh-Hant": "只有在磁碟呈琥珀色或紅色、CPU 呈紅色或有單元失敗時才參與輪播。",
+                "zh-Hans": "只有在磁盘为琥珀色或红色、CPU 为红色或有单元失败时才参与轮播。"
               }
             },
             "type": "boolean"
@@ -228,7 +258,9 @@
             "x-ui": {
               "label": {
                 "en": "Check failed systemd units",
-                "es": "Mirar las unidades de systemd caídas"
+                "es": "Mirar las unidades de systemd caídas",
+                "zh-Hant": "檢查失敗的 systemd 單元",
+                "zh-Hans": "检查失败的 systemd 单元"
               },
               "advanced": true
             },
@@ -241,11 +273,15 @@
             "x-ui": {
               "label": {
                 "en": "Disk rows",
-                "es": "Filas de discos"
+                "es": "Filas de discos",
+                "zh-Hant": "磁碟列數",
+                "zh-Hans": "磁盘行数"
               },
               "help": {
                 "en": "0 = as many as fit. A number shows that many, in rows of a readable size (fewer when the tile is too small for them); the rest are counted in \"+N more\".",
-                "es": "0 = las que quepan. Con un número se ven esas, en filas de un tamaño legible (menos si la tesela no da para ellas); el resto se cuenta en «+N más»."
+                "es": "0 = las que quepan. Con un número se ven esas, en filas de un tamaño legible (menos si la tesela no da para ellas); el resto se cuenta en «+N más».",
+                "zh-Hant": "0 = 盡量放滿。填數字則顯示該數量，並以易讀的大小排列（方格太小時會減少）；其餘的計入「還有 N 個」。",
+                "zh-Hans": "0 = 尽量放满。填数字则显示该数量，并以易读的大小排列（格子太小时会减少）；其余的计入“还有 N 个”。"
               }
             },
             "type": "integer",
@@ -264,11 +300,15 @@
       "type": "system/vitals",
       "name": {
         "en": "Machine vitals",
-        "es": "Vitales de la máquina"
+        "es": "Vitales de la máquina",
+        "zh-Hant": "機器指標",
+        "zh-Hans": "机器指标"
       },
       "description": {
         "en": "CPU usage per core, load, memory, CPU temperature (Linux), disk usage and uptime of this computer.",
-        "es": "Uso de CPU por núcleo, carga, memoria, temperatura de la CPU (Linux), ocupación del disco y tiempo encendido de este ordenador."
+        "es": "Uso de CPU por núcleo, carga, memoria, temperatura de la CPU (Linux), ocupación del disco y tiempo encendido de este ordenador.",
+        "zh-Hant": "這台電腦每個核心的 CPU 使用率、負載、記憶體、CPU 溫度（Linux）、磁碟用量與運作時間。",
+        "zh-Hans": "这台电脑每个核心的 CPU 使用率、负载、内存、CPU 温度（Linux）、磁盘占用和运行时间。"
       },
       "polled": true,
       "intervalMs": 5000,
@@ -286,11 +326,15 @@
             "x-ui": {
               "label": {
                 "en": "Disk to watch",
-                "es": "Disco a vigilar"
+                "es": "Disco a vigilar",
+                "zh-Hant": "監看的磁碟",
+                "zh-Hans": "监控的磁盘"
               },
               "help": {
                 "en": "Any path on it, e.g. / or /home.",
-                "es": "Cualquier ruta suya, p. ej. / o /home."
+                "es": "Cualquier ruta suya, p. ej. / o /home.",
+                "zh-Hant": "該磁碟上的任一路徑，例如 / 或 /home。",
+                "zh-Hans": "该磁盘上的任意路径，例如 / 或 /home。"
               },
               "format": "path"
             },
@@ -307,7 +351,9 @@
       "id": "monitor",
       "name": {
         "en": "System monitor",
-        "es": "Monitor del sistema"
+        "es": "Monitor del sistema",
+        "zh-Hant": "系統監控",
+        "zh-Hans": "系统监控"
       },
       "icon": "cpu",
       "widgets": [
