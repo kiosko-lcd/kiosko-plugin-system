@@ -286,7 +286,11 @@ export const health = defineWidget({
         g.stroke();
         const max = Math.max(...hist.map(([, v]) => v));
         const ms = Math.round(Math.max(10, 20 * k));
-        kit.drawTracked(g, `${tr({ en: 'max', es: 'máx.', 'zh-Hant': '最高', 'zh-Hans': '最高' })} ${fmt.duration(options.historyMs, { round: 'nearest', compact: true })} ${Math.round(max)}°`, sx + sw, sy - ms * 0.4, { size: ms, family: fonts.sans, color: tempCol(max) ?? colors.inkDim, align: 'right' });
+        // One template per language, not fragments: Chinese turns it round (1 小時內最高 76°).
+        const peak = tr({ en: 'max {span} {t}°', es: 'máx. {span} {t}°', 'zh-Hant': '{span}內最高 {t}°', 'zh-Hans': '{span}内最高 {t}°' })
+          .replace('{span}', fmt.duration(options.historyMs, { round: 'nearest', compact: true }))
+          .replace('{t}', String(Math.round(max)));
+        kit.drawTracked(g, peak, sx + sw, sy - ms * 0.4, { size: ms, family: fonts.sans, color: tempCol(max) ?? colors.inkDim, align: 'right' });
       }
     }
 

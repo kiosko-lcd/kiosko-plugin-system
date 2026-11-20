@@ -110,11 +110,11 @@ test('health: disks as a list with "+N more"; temperature amber and red', async 
   const theme = THEMES[0]!;
   const GB = 1e9;
   const disks = ['/', '/home', '/data', '/backup', '/media/a', '/media/b'].map((mount) => ({ mount, size: 1000 * GB, free: 400 * GB }));
-  const paint = (options: Record<string, unknown>, data: object, h = 440) => {
+  const paint = (options: Record<string, unknown>, data: object, h = 440, locale = 'en') => {
     const texts: { text: string; color?: string }[] = [];
     const spy = { ...kit, drawTracked: (g: never, text: string, x: number, y: number, o: { color?: string }) => (texts.push({ text, ...(o?.color ? { color: o.color } : {}) }), (kit.drawTracked as (...a: unknown[]) => number)(g, text, x, y, o)) };
     const g = createCanvas(600, h).getContext('2d');
-    w.render(g as never, { ...createBaseContext({ now: 0, locale: 'en' }), options: { ...w.options!.default, ...options }, data, sources: {}, working: true, box: { x: 0, y: 0, w: 600, h }, theme, fonts: theme.fonts, kit: spy, canvas: { createCanvas }, preview: true } as never);
+    w.render(g as never, { ...createBaseContext({ now: 0, locale }), options: { ...w.options!.default, ...options }, data, sources: {}, working: true, box: { x: 0, y: 0, w: 600, h }, theme, fonts: theme.fonts, kit: spy, canvas: { createCanvas }, preview: true } as never);
     return texts;
   };
   const many = { ...demoHealth(0), disks };
@@ -127,6 +127,9 @@ test('health: disks as a list with "+N more"; temperature amber and red', async 
   assert.equal(big(85), theme.colors.alert);
   assert.ok(paint({ historyMs: 5_400_000 }, demoHealth(0)).some((x) => x.text.startsWith('max 1 h 30')));
   assert.ok(paint({ historyMs: 3_600_000 }, demoHealth(0)).some((x) => x.text.startsWith('max 1 h 7')), 'a whole hour, without " 00"');
+  assert.ok(paint({ historyMs: 3_600_000 }, demoHealth(0), 440, 'zh-TW').some((x) => /^1 小時內最高 \d+°$/.test(x.text)), 'zh-Hant: one sentence, the span first');
+  assert.ok(paint({ historyMs: 3_600_000 }, demoHealth(0), 440, 'zh-CN').some((x) => /^1 小时内最高 \d+°$/.test(x.text)), 'zh-Hans');
+  assert.ok(paint({ historyMs: 3_600_000 }, demoHealth(0), 440, 'es').some((x) => /^máx\. 1 h \d+°$/.test(x.text)));
 });
 
 test('vitals: the first read waits for a second sample; a missing disk path is fine', async () => {
