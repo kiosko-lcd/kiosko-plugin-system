@@ -9,7 +9,7 @@
     "zh-Hant": "系統",
     "zh-Hans": "系统"
   },
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": {
     "en": "Machine vitals as a shared source, and a system health card.",
     "es": "Los vitales de la máquina como fuente compartida, y una tarjeta de salud del sistema.",
@@ -384,7 +384,16 @@
         "system/health",
         "gpu/cards",
         "usage/rail"
+      ],
+      "layouts": [
+        "wide",
+        "square",
+        "tall"
       ]
     }
-  ]
+  ],
+  "support": {
+    "issues": "https://github.com/kiosko-lcd/kiosko-plugin-system/issues",
+    "docs": "https://github.com/kiosko-lcd/kiosko-plugin-system#readme"
+  }
 }
