@@ -4,7 +4,7 @@
   "description": "Machine vitals (CPU, cores, temperature, memory, disk, uptime) as a shared source, and a system health card.",
   "type": "module",
   "license": "MIT",
-  "author": "Loksly",
+  "author": "Loksly <info@kioskolcd.dev> (https://kioskolcd.dev)",
   "keywords": [
     "kiosko",
     "kiosko-plugin",
