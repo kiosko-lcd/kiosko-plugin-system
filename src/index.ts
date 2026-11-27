@@ -14,7 +14,7 @@ export type { Health, Disk } from './health.ts';
 export default definePlugin({
   id: 'system',
   name: { en: 'System', es: 'Sistema', de: 'System', 'zh-Hant': '系統', 'zh-Hans': '系统' },
-  version: '0.2.2',
+  version: '0.2.3',
   languages: ['en', 'es', 'de', 'zh-Hant', 'zh-Hans'],
   sdk: '^0.2.0',
   permissions: { exec: ['systemctl'], files: ['/proc', '/sys'] },
