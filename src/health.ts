@@ -52,12 +52,18 @@ export function diskMounts(procMounts: string): string[] {
   return out;
 }
 
-async function failedUnits(): Promise<string[]> {
+/** Runs `systemctl` with these arguments and gives its output (tests pass a fake). */
+export type Systemctl = (args: string[]) => Promise<string>;
+
+const systemctl: Systemctl = async (args) => (await run('systemctl', args, { timeout: 5000 })).stdout;
+
+/** Failed units of the system and of the user, asked of `systemctl` (two programs started). */
+export async function failedUnits(ask: Systemctl = systemctl): Promise<string[]> {
   if (platform() !== 'linux') return [];
   const out: string[] = [];
   for (const scope of [[], ['--user']]) {
     try {
-      const { stdout } = await run('systemctl', [...scope, '--failed', '--no-legend', '--plain', '--no-pager'], { timeout: 5000 });
+      const stdout = await ask([...scope, '--failed', '--no-legend', '--plain', '--no-pager']);
       for (const line of stdout.split('\n')) {
         const unit = line.trim().split(/\s+/)[0];
         if (unit) out.push(unit.replace(/\.service$/, ''));
@@ -67,6 +73,32 @@ async function failedUnits(): Promise<string[]> {
     }
   }
   return out;
+}
+
+/**
+ * How long the list of failed units is kept. A unit fails rarely and stays
+ * failed until someone looks at it, while each `systemctl` blocks Kiosko's
+ * main thread for some 30 ms (starting a program copies the page tables of a
+ * big process): asked on every fetch, every 30 s, two of them, it was the
+ * most frequent program Kiosko started.
+ */
+export const FAILED_TTL_MS = 3 * 60_000;
+
+let failedCache: { at: number; units: Promise<string[]> } | null = null;
+
+/**
+ * The failed units, asked again only when the last answer is older than
+ * `ttlMs`. One answer for every instance (their fetches at the same moment
+ * share it too).
+ */
+export function cachedFailedUnits(now: number, ask?: Systemctl, ttlMs = FAILED_TTL_MS): Promise<string[]> {
+  if (!failedCache || now - failedCache.at >= ttlMs || now < failedCache.at) failedCache = { at: now, units: failedUnits(ask) };
+  return failedCache.units;
+}
+
+/** Forgets the kept answer (tests). */
+export function resetFailedCache(): void {
+  failedCache = null;
 }
 
 export interface Thresholds {
@@ -192,7 +224,7 @@ export const health = defineWidget({
       memUsed: mem.used,
       memTotal: mem.total,
       uptime: uptime(),
-      failed: options.systemd ? await failedUnits() : [],
+      failed: options.systemd ? await cachedFailedUnits(now) : [],
     };
   },
   visible: ({ options, data }) => Boolean(data) && (!options.onlyWhenWarning || warnings(data!, options).length > 0),

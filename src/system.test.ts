@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createBaseContext } from '@kiosko/sdk';
-import { demoHealth, diskMounts, pushHistory, warnings } from './health.ts';
+import { cachedFailedUnits, demoHealth, diskMounts, FAILED_TTL_MS, pushHistory, resetFailedCache, warnings } from './health.ts';
 import { bytes, coreUsage, memAvailable, parseProcStat, readDisk, readHwmon, readThermalZone, sampleFromCpus } from './sensors.ts';
 import { readVitals, resetCpuSampling } from './vitals.ts';
 import plugin from './index.ts';
@@ -90,6 +90,33 @@ test('health: disk mounts of /proc/mounts, temperature history and warnings', ()
   assert.deepEqual(warnings(data, th, 'alert').map((w) => w.key), ['temp'], 'a disk at 93 % is amber, not red');
   assert.deepEqual(warnings({ ...data, disks: [], cpu: { temp: 70, crit: null } }, th), [], 'an amber CPU is any long build');
   assert.deepEqual(warnings({ ...data, disks: [], cpu: null, failed: ['backup'] }, th, 'alert').map((w) => w.key), ['units']);
+});
+
+test('health: failed units are asked of systemctl once every few minutes, not on every fetch', { skip: process.platform !== 'linux' }, async () => {
+  resetFailedCache();
+  const asked: string[][] = [];
+  let failed = 'nginx.service loaded failed failed nginx\n';
+  const ask = async (args: string[]) => {
+    asked.push(args);
+    if (args[0] === '--user') throw new Error('no user bus');
+    return failed;
+  };
+  const t0 = 1_000_000;
+  assert.deepEqual(await cachedFailedUnits(t0, ask), ['nginx']);
+  assert.equal(asked.length, 2, 'the system and the user');
+  // Fetches every 30 s, and other instances at the same moment: the same answer, no program started.
+  failed = '';
+  for (let t = t0; t < t0 + FAILED_TTL_MS; t += 30_000) assert.deepEqual(await cachedFailedUnits(t, ask), ['nginx']);
+  await Promise.all([cachedFailedUnits(t0 + 1000, ask), cachedFailedUnits(t0 + 1000, ask)]);
+  assert.equal(asked.length, 2);
+  assert.ok(FAILED_TTL_MS >= 2 * 60_000 && FAILED_TTL_MS <= 5 * 60_000, 'a failed unit still shows within minutes');
+  // Older than that: asked again, and what changed shows.
+  assert.deepEqual(await cachedFailedUnits(t0 + FAILED_TTL_MS, ask), []);
+  assert.equal(asked.length, 4);
+  // A clock that goes back doesn't keep an answer forever.
+  assert.deepEqual(await cachedFailedUnits(t0, ask), []);
+  assert.equal(asked.length, 6);
+  resetFailedCache();
 });
 
 test('health: keeps the tile only on red, and only if the user turns it on', () => {
